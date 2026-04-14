@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Ration | E-Ration</title>
+    <link rel="icon" type="image/png" href="logo.jpg">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: #f3f4f6; padding-bottom: 2rem; }
+
+        header {
+            background: linear-gradient(135deg, #10b981, #059669);
+            padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; color: white;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .btn-logout {
+            border: 1px solid white; color: white; padding: 0.5rem 1.5rem; text-decoration: none;
+            border-radius: 2rem; transition: 0.3s; font-size: 0.9rem;
+        }
+        .btn-logout:hover { background: white; color: #059669; }
+
+        .container { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
+        
+        /* --- DYNAMIC PROFILE CARD --- */
+        .profile-card {
+            background: white; padding: 2rem; border-radius: 1rem; text-align: center;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); margin-bottom: 2rem;
+            position: relative; overflow: hidden;
+            border: 2px solid transparent;
+        }
+        
+        /* Card Categories Styles */
+        .card-yellow { border-color: #facc15; background: linear-gradient(to bottom right, #fff, #fef9c3); }
+        .card-orange { border-color: #fb923c; background: linear-gradient(to bottom right, #fff, #ffedd5); }
+        .card-white { border-color: #94a3b8; background: white; }
+
+        .card-badge {
+            display: inline-block; padding: 5px 15px; border-radius: 20px;
+            font-weight: 700; font-size: 0.85rem; text-transform: uppercase;
+            margin-top: 10px; color: white;
+        }
+        .badge-yellow { background: #eab308; color: black; }
+        .badge-orange { background: #f97316; }
+        .badge-white { background: #64748b; }
+
+        .avatar { font-size: 3rem; margin-bottom: 0.5rem; }
+        h2 { color: #1f2937; margin-bottom: 0.2rem; }
+        .sub-text { color: #6b7280; font-size: 0.9rem; }
+
+        .quota-grid { 
+            display: flex; gap: 1.5rem; margin-bottom: 2rem; 
+            flex-wrap: wrap; 
+        }
+        .quota-card {
+            flex: 1 1 30%; min-width: 200px;
+            background: white; padding: 1.5rem; border-radius: 1rem;
+            text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border-bottom: 4px solid #10b981;
+        }
+        .quota-card h1 { font-size: 2.5rem; color: #10b981; margin: 0.5rem 0; }
+        .quota-card p { color: #6b7280; font-weight: 600; text-transform: uppercase; font-size: 0.9rem; }
+
+        .history-card { background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th { text-align: left; padding: 1rem; background: #f9fafb; color: #374151; }
+        td { padding: 1rem; border-bottom: 1px solid #e5e7eb; color: #4b5563; }
+        
+        .btn-invoice {
+            background: #e0f2fe; color: #0284c7; border: none; padding: 5px 12px;
+            border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 0.85rem;
+            transition: 0.2s; display: flex; align-items: center; gap: 5px; width: fit-content;
+        }
+        .btn-invoice:hover { background: #0284c7; color: white; }
+
+        .lang-select {
+            padding: 5px 10px; border-radius: 20px; border: 1px solid white;
+            background: rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 0.9rem;
+            margin-right: 10px;
+        }
+        .lang-select option { color: #333; }
+    </style>
+</head>
+<body>
+    <header>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="https://flagcdn.com/48x36/in.png" alt="India" style="height: 20px; border-radius: 2px;">
+            <h3 data-key="header_title">Citizen Portal</h3>
+        </div>
+        
+        <div style="display: flex; align-items: center;">
+            <select id="pageLangSelect" class="lang-select" onchange="setLang(this.value)">
+                <option value="en">English</option>
+                <option value="hi">हिंदी</option>
+                <option value="mr">मराठी</option>
+                <option value="ta">தமிழ்</option>
+                <option value="gu">ગુજરાતી</option>
+            </select>
+            
+            <a href="index.html" class="btn-logout" onclick="localStorage.removeItem('loggedUser')" data-key="btn_logout">Logout</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="profile-card" id="profileCard">
+            <div class="avatar">👨‍👩‍👧‍👦</div>
+            <h2 id="userName">Loading...</h2>
+            <p class="sub-text" id="userId">Ration Card ID: ...</p>
+            
+            <div id="cardBadge" class="card-badge badge-white">Checking Category...</div>
+            
+            <p style="margin-top: 10px; color: #059669; font-weight: 600;" data-key="status_active">✅ Active Beneficiary (NFSA)</p>
+        </div>
+
+        <h3 style="margin-bottom: 1rem; color: #374151;" data-key="quota_heading">Your Monthly Quota (Remaining)</h3>
+        
+        <div class="quota-grid">
+            <div class="quota-card">
+                <p data-key="item_rice">Rice</p>
+                <h1 id="riceQuota">--</h1>
+                <span data-key="unit_kg">Kilograms</span>
+            </div>
+            <div class="quota-card" style="border-color: #f59e0b;">
+                <p data-key="item_wheat">Wheat</p>
+                <h1 id="wheatQuota" style="color: #f59e0b;">--</h1>
+                <span data-key="unit_kg">Kilograms</span>
+            </div>
+            <div class="quota-card" style="border-color: #ec4899;">
+                <p data-key="item_sugar">Sugar</p>
+                <h1 id="sugarQuota" style="color: #ec4899;">--</h1>
+                <span data-key="unit_kg">Kilograms</span>
+            </div>
+            <div class="quota-card" style="border-color: #6366f1;">
+                <p data-key="item_kerosene">Kerosene</p>
+                <h1 id="keroseneQuota" style="color: #6366f1;">--</h1>
+                <span data-key="unit_l">Liters</span>
+            </div>
+            <div class="quota-card" style="border-color: #10b981;">
+                <p data-key="item_dal">Dal</p>
+                <h1 id="dalQuota" style="color: #10b981;">--</h1>
+                <span data-key="unit_kg">Kilograms</span>
+            </div>
+            <div class="quota-card" style="border-color: #8b5cf6;">
+                <p data-key="item_rajma">Rajma</p>
+                <h1 id="rajmaQuota" style="color: #8b5cf6;">--</h1>
+                <span data-key="unit_kg">Kilograms</span>
+            </div>
+        </div>
+
+        <div class="history-card">
+            <h3 data-key="history_heading">Recent Transactions</h3>
+            <table id="historyTable">
+                <thead>
+                    <tr>
+                        <th data-key="th_date">Date & Time</th>
+                        <th data-key="th_item">Item</th>
+                        <th data-key="th_qty">Quantity</th>
+                        <th data-key="th_invoice">Invoice</th> 
+                    </tr>
+                </thead>
+                <tbody><tr><td colspan="4">Loading...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const cardId = localStorage.getItem('loggedUser');
+        if(!cardId) window.location.href = 'login.html';
+
+        const LANG = {
+            en: {
+                header_title: "Citizen Portal", btn_logout: "Logout",
+                status_active: "✅ Active Beneficiary (NFSA)",
+                quota_heading: "Your Monthly Quota (Remaining)",
+                item_rice: "Rice", item_wheat: "Wheat", item_sugar: "Sugar", item_kerosene: "Kerosene", item_dal: "Dal", item_rajma: "Rajma",
+                unit_kg: "Kilograms", unit_l: "Liters",
+                history_heading: "Recent Transactions",
+                th_date: "Date & Time", th_item: "Item", th_qty: "Quantity", th_invoice: "Invoice",
+                btn_download: "📄 Download", msg_no_tx: "No transactions yet."
+            },
+            hi: {
+                header_title: "नागरिक पोर्टल", btn_logout: "लॉग आउट",
+                status_active: "✅ सक्रिय लाभार्थी (NFSA)",
+                quota_heading: "आपका मासिक कोटा (शेष)",
+                item_rice: "चावल", item_wheat: "गेहूं", item_sugar: "चीनी", item_kerosene: "मिट्टी का तेल", item_dal: "दाल", item_rajma: "राजमा",
+                unit_kg: "किलोग्राम", unit_l: "लीटर",
+                history_heading: "हाल का लेन-देन",
+                th_date: "दिनांक और समय", th_item: "वस्तु", th_qty: "मात्रा", th_invoice: "रसीद",
+                btn_download: "📄 डाउनलोड", msg_no_tx: "अभी तक कोई लेन-देन नहीं।"
+            },
+            mr: {
+                header_title: "नागरिक पोर्टल", btn_logout: "बाहेर पडा",
+                status_active: "✅ सक्रिय लाभार्थी (NFSA)",
+                quota_heading: "आपला मासिक कोटा (उर्वरित)",
+                item_rice: "तांदूळ", item_wheat: "गहू", item_sugar: "साखर", item_kerosene: "रॉकेल", item_dal: "डाळ", item_rajma: "राजमा",
+                unit_kg: "किलोग्राम", unit_l: "लिटर",
+                history_heading: "अलीकडील व्यवहार",
+                th_date: "तारीख आणि वेळ", th_item: "वस्तू", th_qty: "प्रमाण", th_invoice: "पावती",
+                btn_download: "📄 डाउनलोड", msg_no_tx: "अद्याप कोणताही व्यवहार नाही."
+            },
+            ta: {
+                header_title: "குடிமக்கள் தளம்", btn_logout: "வெளியேறு",
+                status_active: "✅ செயலில் உள்ள பயனாளி",
+                quota_heading: "உங்கள் மாத ஒதுக்கீடு (மீதம்)",
+                item_rice: "அரிசி", item_wheat: "கோதுமை", item_sugar: "சர்க்கரை", item_kerosene: "மண்ணெண்ணெய்", item_dal: "பருப்பு", item_rajma: "ராஜ்மா",
+                unit_kg: "கிலோகிராம்", unit_l: "லிட்டர்",
+                history_heading: "சமீபத்திய பரிவர்த்தனைகள்",
+                th_date: "தேதி & நேரம்", th_item: "பொருள்", th_qty: "அளவு", th_invoice: "ரசீது",
+                btn_download: "📄 பதிவிறக்க", msg_no_tx: "பரிவர்த்தனைகள் இல்லை."
+            },
+            gu: {
+                header_title: "નાગરિક પોર્ટલ", btn_logout: "લૉગ આઉટ",
+                status_active: "✅ સક્રિય લાભાર્થી (NFSA)",
+                quota_heading: "તમારો માસિક કોટા (બાકી)",
+                item_rice: "ચોખા", item_wheat: "ઘઉં", item_sugar: "ખાંડ", item_kerosene: "કેરોસીન", item_dal: "દાળ", item_rajma: "રાજમા",
+                unit_kg: "કિલોગ્રામ", unit_l: "લિટર",
+                history_heading: "તાજેતરના વ્યવહારો",
+                th_date: "તારીખ અને સમય", th_item: "વસ્તુ", th_qty: "જથ્થો", th_invoice: "રસીદ",
+                btn_download: "📄 ડાઉનલોડ", msg_no_tx: "કોઈ વ્યવહાર નથી."
+            }
+        };
+
+        let currentHistoryData = []; 
+
+        function setLang(lang) {
+            localStorage.setItem("lang", lang);
+            document.getElementById('pageLangSelect').value = lang;
+            
+            document.querySelectorAll("[data-key]").forEach(el => {
+                const k = el.dataset.key;
+                if(LANG[lang][k]) el.innerText = LANG[lang][k];
+            });
+
+            renderTable(currentHistoryData);
+        }
+
+        async function load() {
+            try {
+                const userRes = await fetch(`/api/user/details/${cardId}`);
+                const user = await userRes.json();
+                if(user) {
+                    document.getElementById('userName').innerText = user.name;
+                    document.getElementById('userId').innerText = `Card No: ${user.username}`;
+                    
+                    // --- 🎯 DYNAMIC CARD STYLING ---
+                    const card = document.getElementById('profileCard');
+                    const badge = document.getElementById('cardBadge');
+                    
+                    if(user.card_category === 'Yellow') {
+                        card.classList.add('card-yellow');
+                        badge.className = 'card-badge badge-yellow';
+                        badge.innerText = '⭐ Yellow Card (Antyodaya)';
+                    } else if(user.card_category === 'Orange') {
+                        card.classList.add('card-orange');
+                        badge.className = 'card-badge badge-orange';
+                        badge.innerText = '🟠 Orange Card (Priority)';
+                    } else {
+                        card.classList.add('card-white');
+                        badge.className = 'card-badge badge-white';
+                        badge.innerText = '⚪ White Card (General)';
+                    }
+
+                    document.getElementById('riceQuota').innerText = user.quota_rice;
+                    document.getElementById('wheatQuota').innerText = user.quota_wheat;
+                    document.getElementById('sugarQuota').innerText = user.quota_sugar;
+                    document.getElementById('keroseneQuota').innerText = user.quota_kerosene;
+                    document.getElementById('dalQuota').innerText = user.quota_dal;
+                    document.getElementById('rajmaQuota').innerText = user.quota_rajma;
+                }
+
+                const histRes = await fetch(`/api/user/history/${cardId}`);
+                currentHistoryData = await histRes.json();
+                setLang(localStorage.getItem("lang") || "en");
+
+            } catch(e) { console.error(e); }
+        }
+
+        function renderTable(history) {
+            const l = localStorage.getItem("lang") || "en";
+            const tbody = document.querySelector('#historyTable tbody');
+            tbody.innerHTML = '';
+            
+            if(history.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4">${LANG[l].msg_no_tx}</td></tr>`;
+                return;
+            }
+            
+            history.forEach(tx => {
+                const dateObj = new Date(tx.date);
+                const dateStr = dateObj.toLocaleDateString();
+                const timeStr = dateObj.toLocaleTimeString();
+                
+                const itemKey = 'item_' + tx.item.toLowerCase();
+                const translatedItem = LANG[l][itemKey] || tx.item.toUpperCase();
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>
+                            <div style="font-weight:600; color:#374151;">${dateStr}</div>
+                            <div style="font-size:0.8rem; color:#9ca3af;">${timeStr}</div>
+                        </td>
+                        <td>${translatedItem}</td>
+                        <td>${tx.qty}</td>
+                        <td>
+                            <button class="btn-invoice" onclick="printInvoice('${tx.id}', '${dateStr} ${timeStr}', '${tx.item}', '${tx.qty}', document.getElementById('userName').innerText)">
+                                ${LANG[l].btn_download}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function printInvoice(txId, date, item, qty, userName) {
+            let price = 2;
+            if(item.toLowerCase() === 'rice') price = 3;
+            if(item.toLowerCase() === 'sugar') price = 20;
+            if(item.toLowerCase() === 'kerosene') price = 25;
+            if(item.toLowerCase() === 'dal') price = 50;
+            
+            const total = (qty * price).toFixed(2);
+            
+            const w = window.open('', '', 'height=650,width=450');
+            w.document.write(`
+                <html>
+                <head>
+                    <title>E-Ration Receipt #${txId}</title>
+                    <style>
+                        body { font-family: 'Courier New', monospace; padding: 20px; text-align: center; border: 2px dashed #333; margin: 20px; }
+                        h2 { margin: 5px 0; }
+                        .divider { border-bottom: 1px dashed #000; margin: 15px 0; }
+                        .row { display: flex; justify-content: space-between; margin: 5px 0; }
+                        .total { font-size: 1.2rem; font-weight: bold; margin-top: 10px; }
+                    </style>
+                </head>
+                <body>
+                    <img src="https://flagcdn.com/48x36/in.png" width="30">
+                    <h2>GOVT OF INDIA</h2>
+                    <p>Dept of Food & Public Distribution</p>
+                    <div class="divider"></div>
+                    <div class="row"><span>Receipt No:</span> <span>#${txId}</span></div>
+                    <div class="row"><span>Date:</span> <span>${date}</span></div>
+                    <div class="row"><span>Beneficiary:</span> <span>${userName}</span></div>
+                    <div class="row"><span>Card ID:</span> <span>${cardId}</span></div>
+                    <div class="divider"></div>
+                    <div class="row" style="font-weight:bold;"><span>ITEM</span><span>QTY x PRICE</span></div>
+                    <div class="row"><span>${item.toUpperCase()}</span><span>${qty} x ₹${price}</span></div>
+                    <div class="divider"></div>
+                    <div class="row total"><span>TOTAL PAID:</span><span>₹${total}</span></div>
+                    <div class="divider"></div>
+                    <p style="font-size:0.8rem;">*** SAVE FOOD, SAVE NATION ***</p>
+                </body>
+                </html>
+            `);
+            w.document.close();
+            w.print();
+        }
+
+        load();
+    </script>
+</body>
+</html>

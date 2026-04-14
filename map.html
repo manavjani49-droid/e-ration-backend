@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Mumbai Map | E-Ration</title>
+    <link rel="icon" type="image/png" href="logo.jpg">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body, html { height: 100%; width: 100%; overflow: hidden; }
+
+        #map { height: 100%; width: 100%; z-index: 1; }
+
+        /* Floating Controls */
+        .overlay { position: absolute; top: 20px; left: 20px; z-index: 1000; display: flex; gap: 10px; }
+        .back-btn {
+            background: white; padding: 10px 20px; border-radius: 50px;
+            text-decoration: none; color: #1f2937; font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            display: flex; align-items: center; gap: 5px; transition: 0.3s;
+        }
+        .back-btn:hover { background: #f3f4f6; transform: translateY(-2px); }
+
+        /* "My Location" Button */
+        .locate-btn {
+            background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 50px;
+            font-weight: 600; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);
+            display: flex; align-items: center; gap: 5px; transition: 0.3s;
+        }
+        .locate-btn:hover { background: #1d4ed8; transform: translateY(-2px); }
+
+        /* Legend */
+        .legend-box {
+            position: absolute; bottom: 30px; left: 30px; z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px; border-radius: 15px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            width: 220px;
+        }
+        .legend-title { font-weight: 600; margin-bottom: 10px; border-bottom: 2px solid #e5e7eb; padding-bottom: 5px; }
+        .legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.9rem; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+
+        /* Popup Button Style */
+        .dir-btn {
+            background: #2563eb; color: white; border: none; padding: 5px 10px;
+            border-radius: 4px; cursor: pointer; margin-top: 8px; font-size: 0.8rem; width: 100%;
+        }
+        .dir-btn:hover { background: #1d4ed8; }
+    </style>
+</head>
+<body>
+
+    <div class="overlay">
+        <a href="index.html" class="back-btn">⬅ Back to Home</a>
+        <button onclick="findMe()" class="locate-btn">📍 Find Me</button>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="legend-box">
+        <div class="legend-title">Stock Status</div>
+        <div class="legend-item"><span class="dot" style="background: #10b981;"></span> High Availability</div>
+        <div class="legend-item"><span class="dot" style="background: #f59e0b;"></span> Low Stock</div>
+        <div class="legend-item"><span class="dot" style="background: #ef4444;"></span> Out of Stock</div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // 1. Center Map on Mumbai
+        const map = L.map('map').setView([19.140, 72.85], 12); 
+
+        // 2. Add Map Tiles
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: 'OpenStreetMap', maxZoom: 19
+        }).addTo(map);
+
+        // 3. User Location Marker (The Blue Dot)
+        let userMarker = null;
+
+        function findMe() {
+            if (!navigator.geolocation) {
+                alert("Geolocation is not supported by your browser");
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    // Remove old marker if exists
+                    if(userMarker) map.removeLayer(userMarker);
+
+                    // Add Blue Pulsing Dot for User
+                    userMarker = L.circleMarker([lat, lng], {
+                        radius: 10, fillColor: "#2563eb", color: "#white", weight: 2, opacity: 1, fillOpacity: 0.8
+                    }).addTo(map);
+                    
+                    userMarker.bindPopup("<b>You are here!</b>").openPopup();
+                    map.setView([lat, lng], 14); // Zoom to user
+                },
+                () => { alert("Unable to retrieve your location"); }
+            );
+        }
+
+        // 4. Load Shops
+        async function loadShops() {
+            try {
+                const res = await fetch('/api/shops');
+                const shops = await res.json();
+
+                shops.forEach(shop => {
+                    let color = '#10b981'; 
+                    let statusText = 'Available';
+                    
+                    if(shop.stock_status === 'Low') { color = '#f59e0b'; statusText = 'Running Low'; }
+                    if(shop.stock_status === 'Empty') { color = '#ef4444'; statusText = 'Out of Stock'; }
+
+                    const circle = L.circleMarker([shop.lat, shop.lng], {
+                        color: color, fillColor: color, fillOpacity: 0.9, radius: 10, weight: 2
+                    }).addTo(map);
+
+                    // Permanent Label for Demo Shops
+                    if (shop.id >= 101 && shop.id <= 103) {
+                         circle.bindTooltip(`<b>${shop.name}</b>`, {permanent: true, direction: "top", offset: [0, -10]});
+                    } else {
+                         circle.bindTooltip(`<b>${shop.name}</b>`);
+                    }
+
+                    // --- 🚗 THE NAVIGATION BUTTON ---
+                    const popupContent = `
+                        <div style="text-align:center;">
+                            <b>${shop.name}</b><br>
+                            <span style="color:${color}; font-weight:bold;">${statusText}</span><br>
+                            <button class="dir-btn" onclick="openGoogleMaps(${shop.lat}, ${shop.lng})">
+                                🚗 Get Directions
+                            </button>
+                        </div>
+                    `;
+                    circle.bindPopup(popupContent);
+                });
+            } catch(e) { console.error("Map Error", e); }
+        }
+
+        // 5. Function to Open Google Maps
+        function openGoogleMaps(lat, lng) {
+            // Opens Google Maps Directions in a new tab
+            const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+            window.open(url, '_blank');
+        }
+
+        loadShops();
+    </script>
+</body>
+</html>

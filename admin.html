@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Govt Admin | E-Ration</title>
+    <link rel="icon" type="image/png" href="logo.jpg">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { display: flex; height: 100vh; background: #f1f5f9; overflow: hidden; }
+
+        /* Sidebar */
+        aside { width: 280px; background: #0f172a; color: white; padding: 2rem; display: flex; flex-direction: column; }
+        .brand { display:flex; align-items:center; gap:0.75rem; margin-bottom: 3rem; }
+        .brand-logo { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; box-shadow: 0 6px 12px rgba(0,0,0,0.25); }
+        .brand-text { color: #38bdf8; font-weight: 800; font-size: 1.25rem; }
+        .nav-link { text-decoration: none; color: #94a3b8; padding: 1rem; border-radius: 0.5rem; display: block; margin-bottom: 0.5rem; transition: 0.3s; }
+        .nav-link:hover, .nav-link.active { background: #1e293b; color: white; }
+        .nav-link.logout { margin-top: auto; color: #ef4444; }
+
+        /* Main */
+        main { flex: 1; padding: 2rem; overflow-y: auto; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        h1 { color: #1e293b; font-weight: 700; font-size: 1.8rem; }
+        
+        /* KPI STATS ROW */
+        .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+        .kpi-card { background: white; padding: 1.5rem; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-left: 5px solid #3b82f6; }
+        .kpi-label { font-size: 0.85rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
+        .kpi-value { font-size: 2.2rem; font-weight: 700; color: #0f172a; margin-top: 5px; }
+        
+        /* Dashboard Grid */
+        .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; }
+        .card { background: white; padding: 2rem; border-radius: 1.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
+
+        /* Controls */
+        /* Updated: Search Bar Style */
+        input.search-bar { 
+            width: 100%; padding: 0.8rem; margin-bottom: 0.5rem; 
+            border: 1px solid #cbd5e1; border-radius: 0.5rem; outline: none;
+            font-size: 0.9rem; background: #f8fafc;
+        }
+        input.search-bar:focus { border-color: #3b82f6; background: #fff; }
+
+        select.control-select { width: 100%; padding: 0.8rem; border-radius: 0.5rem; border: 2px solid #e2e8f0; margin-bottom: 1rem; }
+        .btn-control { width: 100%; padding: 1rem; margin-bottom: 1rem; border: none; border-radius: 0.75rem; color: white; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .btn-green { background: #10b981; } .btn-green:hover { background: #059669; }
+        .btn-orange { background: #f59e0b; } .btn-orange:hover { background: #d97706; }
+        .btn-red { background: #ef4444; }   .btn-red:hover { background: #dc2626; }
+
+        /* NOTIFICATION BOX */
+        .notification-area { margin-bottom: 2rem; display: none; }
+        .alert-box {
+            background: #fff1f2; border-left: 5px solid #ef4444; padding: 1rem;
+            border-radius: 0.5rem; color: #991b1b; display: flex; justify-content: space-between; align-items: center;
+            animation: slideIn 0.5s ease; margin-bottom: 10px;
+        }
+        @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .btn-resolve { background: #ef4444; color: white; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer; }
+
+        /* RESTOCK ALL BUTTON */
+        .btn-restock-all {
+            width: 100%; background: #1f2937; color: white; padding: 15px; border-radius: 10px;
+            font-weight: 700; cursor: pointer; margin-bottom: 15px; display: flex; justify-content: center; align-items: center; gap: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: 0.3s;
+        }
+        .btn-restock-all:hover { background: #000; transform: translateY(-2px); }
+
+        /* LANGUAGE SELECTOR */
+        select.lang-select {
+            width: auto; min-width: 120px; padding: 8px 20px;
+            border-radius: 50px; border: none; background: #3b82f6; color: white;
+            font-weight: 600; cursor: pointer; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+            text-align: center; outline: none; transition: 0.3s;
+        }
+        select.lang-select:hover { background: #2563eb; transform: translateY(-1px); }
+        select.lang-select option { background: white; color: #333; }
+    </style>
+</head>
+<body>
+    <aside>
+        <div class="brand">
+            <img src="img4.png" class="brand-logo" alt="E-Ration Logo">
+            <div style="display:flex; align-items:baseline"><span class="brand-text">Govt. Portal</span></div>
+        </div>
+        <a href="#" class="nav-link active" data-key="nav_overview">📊 National Overview</a>
+        <a href="map.html" class="nav-link" data-key="nav_map">🌍 Live Map View</a>
+        <a href="index.html" class="nav-link logout" data-key="nav_logout">🚪 Logout</a>
+    </aside>
+
+    <main>
+        <header>
+            <div>
+                <h1 data-key="dash_title">Administrator Dashboard</h1>
+                <p style="color:#64748b" data-key="dash_subtitle">Monitor 50+ Ration Shops across Maharashtra.</p>
+            </div>
+            
+            <select id="pageLangSelect" class="lang-select" onchange="setLang(this.value)">
+                <option value="en">English</option>
+                <option value="hi">हिंदी</option>
+                <option value="mr">मराठी</option>
+                <option value="ta">தமிழ்</option>
+                <option value="gu">ગુજરાતી</option>
+            </select>
+        </header>
+
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label" data-key="kpi_shops">Active Shops</div>
+                <div class="kpi-value" id="countShops">0</div>
+            </div>
+            <div class="kpi-card" style="border-color: #ef4444;">
+                <div class="kpi-label" data-key="kpi_alerts">Critical Alerts</div>
+                <div class="kpi-value" id="countAlerts" style="color: #ef4444;">0</div>
+            </div>
+            <div class="kpi-card" style="border-color: #10b981;">
+                <div class="kpi-label" data-key="kpi_dist">Total Distributed (KG)</div>
+                <div class="kpi-value" id="countDist" style="color: #10b981;">0</div>
+            </div>
+        </div>
+
+        <div id="notificationArea" class="notification-area"></div>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <h2 data-key="chart_title">📦 Commodity Distribution (Live)</h2>
+                <div style="height: 300px;"><canvas id="myChart"></canvas></div>
+            </div>
+
+            <div class="card">
+                <h2 data-key="ctrl_title">📡 Remote Stock Control</h2>
+                <label style="font-weight:600; font-size:0.8rem; margin-bottom: 5px; display:block;" data-key="ctrl_label">SELECT SHOP ID:</label>
+                
+                <input type="text" id="shopSearch" class="search-bar" placeholder="🔍 Search City or State..." onkeyup="filterShops()">
+                
+                <select id="shopSelect" class="control-select"><option>Loading...</option></select>
+
+                <button class="btn-control btn-green" onclick="updateStock('High')" data-key="btn_high">Set High Stock ✅</button>
+                <button class="btn-control btn-orange" onclick="updateStock('Low')" data-key="btn_low">Set Low Stock ⚠️</button>
+                <button class="btn-control btn-red" onclick="updateStock('Empty')" data-key="btn_empty">Set Out of Stock 🚫</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- TRANSLATION DATA ---
+        const LANG = {
+            en: {
+                nav_overview: "📊 National Overview", nav_map: "🌍 Live Map View", nav_logout: "🚪 Logout",
+                dash_title: "Administrator Dashboard", dash_subtitle: "Monitor 50+ Ration Shops across Maharashtra.",
+                kpi_shops: "Active Shops", kpi_alerts: "Critical Alerts", kpi_dist: "Total Distributed (KG)",
+                chart_title: "📦 Commodity Distribution (Live)",
+                ctrl_title: "📡 Remote Stock Control", ctrl_label: "SELECT SHOP ID:",
+                btn_high: "Set High Stock ✅", btn_low: "Set Low Stock ⚠️", btn_empty: "Set Out of Stock 🚫",
+                alert_btn: "Restock Now", restock_all_btn: "🚀 ACTION REQUIRED: Restock All", stores: "Stores",
+                alert_msg_pre: "⚠️ URGENT ALERT: Shop", alert_msg_post: "is running LOW!"
+            },
+            hi: {
+                nav_overview: "📊 राष्ट्रीय अवलोकन", nav_map: "🌍 लाइव मैप", nav_logout: "🚪 लॉग आउट",
+                dash_title: "प्रशासक डैशबोर्ड", dash_subtitle: "महाराष्ट्र भर में 50+ राशन दुकानों की निगरानी।",
+                kpi_shops: "सक्रिय दुकानें", kpi_alerts: "गंभीर अलर्ट", kpi_dist: "कुल वितरित (किलो)",
+                chart_title: "📦 वस्तु वितरण (लाइव)",
+                ctrl_title: "📡 रिमोट स्टॉक कंट्रोल", ctrl_label: "दुकान आईडी चुनें:",
+                btn_high: "स्टॉक फुल करें ✅", btn_low: "स्टॉक कम करें ⚠️", btn_empty: "स्टॉक खाली करें 🚫",
+                alert_btn: "अभी रीस्टॉक करें", restock_all_btn: "🚀 कार्रवाई आवश्यक: सभी", stores: "दुकानें रीस्टॉक करें",
+                alert_msg_pre: "⚠️ चेतावनी: दुकान", alert_msg_post: "में स्टॉक कम है!"
+            },
+            mr: {
+                nav_overview: "📊 राष्ट्रीय विहंगावलोकन", nav_map: "🌍 थेट नकाशा", nav_logout: "🚪 बाहेर पडा",
+                dash_title: "प्रशासक डॅशबोर्ड", dash_subtitle: "महाराष्ट्रभरातील 50+ रेशन दुकानांचे निरीक्षण.",
+                kpi_shops: "सक्रिय दुकाने", kpi_alerts: "गंभीर अलर्ट", kpi_dist: "एकूण वितरण (किलो)",
+                chart_title: "📦 वस्तू वितरण (थेट)",
+                ctrl_title: "📡 रिमोट स्टॉक नियंत्रण", ctrl_label: "दुकान निवडा:",
+                btn_high: "स्टॉक पूर्ण करा ✅", btn_low: "स्टॉक कमी करा ⚠️", btn_empty: "स्टॉक रिकामे करा 🚫",
+                alert_btn: "आता रीस्टॉक करा", restock_all_btn: "🚀 कृती आवश्यक: सर्व", stores: "दुकाने भरा",
+                alert_msg_pre: "⚠️ तातडीची सूचना: दुकान", alert_msg_post: "मध्ये साठा कमी आहे!"
+            },
+            ta: {
+                nav_overview: "📊 தேசிய கண்ணோட்டம்", nav_map: "🌍 நேரடி வரைபடம்", nav_logout: "🚪 வெளியேறு",
+                dash_title: "நிர்வாகக் குழு", dash_subtitle: "மகாராஷ்டிரா முழுவதும் 50+ ரேஷன் கடைகளைக் கண்காணிக்கவும்.",
+                kpi_shops: "செயலில் உள்ள கடைகள்", kpi_alerts: "முக்கிய எச்சரிக்கைகள்", kpi_dist: "மொத்த விநியோகம் (கிலோ)",
+                chart_title: "📦 பொருட்கள் விநியோகம்",
+                ctrl_title: "📡 பங்கு கட்டுப்பாடு", ctrl_label: "கடையைத் தேர்ந்தெடுக்கவும்:",
+                btn_high: "முழு பங்கு ✅", btn_low: "குறைந்த பங்கு ⚠️", btn_empty: "காலியான பங்கு 🚫",
+                alert_btn: "இப்போதே நிரப்பவும்", restock_all_btn: "🚀 நடவடிக்கை தேவை: அனைத்து", stores: "கடைகள்",
+                alert_msg_pre: "⚠️ அவசர எச்சரிக்கை: கடை", alert_msg_post: "குறைவாக உள்ளது!"
+            },
+            gu: {
+                nav_overview: "📊 રાષ્ટ્રીય ઝાંખી", nav_map: "🌍 લાઈવ નકશો", nav_logout: "🚪 લૉગ આઉટ",
+                dash_title: "એડમિનિસ્ટ્રેટર ડેશબોર્ડ", dash_subtitle: "મહારાષ્ટ્રભરમાં 50+ રેશન દુકાનો પર નજર રાખો.",
+                kpi_shops: "સક્રિય દુકાનો", kpi_alerts: "ગંભીર ચેતવણીઓ", kpi_dist: "કુલ વિતરણ (કિલો)",
+                chart_title: "📦 કોમોડિટી વિતરણ",
+                ctrl_title: "📡 રિમોટ સ્ટોક કંટ્રોલ", ctrl_label: "દુકાન પસંદ કરો:",
+                btn_high: "સ્ટોક ભરો ✅", btn_low: "સ્ટોક ઓછો કરો ⚠️", btn_empty: "સ્ટોક ખાલી કરો 🚫",
+                alert_btn: "હમણાં રીસ્ટોક કરો", restock_all_btn: "🚀 કાર્યવાહી જરૂરી: બધી", stores: "દુકાનો",
+                alert_msg_pre: "⚠️ ચેતવણી: દુકાન", alert_msg_post: "માં સ્ટોક ઓછો છે!"
+            }
+        };
+
+        function setLang(lang) {
+            localStorage.setItem("lang", lang);
+            document.getElementById('pageLangSelect').value = lang;
+            
+            // 1. Update Static Text
+            document.querySelectorAll("[data-key]").forEach(el => {
+                const k = el.dataset.key;
+                if(LANG[lang][k]) el.innerText = LANG[lang][k];
+            });
+
+            // 2. Re-render Dynamic Content (Alerts)
+            init(); 
+        }
+
+        // --- CORE LOGIC ---
+        let allShopsData = []; // Store shops here to allow filtering
+
+        async function init() {
+            const lang = localStorage.getItem("lang") || "en";
+            
+            // Cache busting
+            const res = await fetch('/api/shops?t=' + Date.now());
+            const shops = await res.json();
+            
+            allShopsData = shops; // Save full list
+            
+            // Trigger Filter (this will render the dropdown based on current search)
+            filterShops(); 
+            
+            // Handle Alerts Area (Separate from Dropdown)
+            const alertArea = document.getElementById('notificationArea');
+            alertArea.innerHTML = ''; 
+            
+            let alertCount = 0;
+            let alertHtml = '';
+
+            shops.forEach(shop => {
+                // Check for LOW Stock
+                if(shop.stock_status === 'Low' || shop.stock_status === 'Empty') {
+                    alertCount++;
+                    const msg = `${LANG[lang].alert_msg_pre} #${shop.id} (${shop.name}) ${LANG[lang].alert_msg_post}`;
+                    
+                    alertHtml += `
+                        <div class="alert-box">
+                            <div><strong>${msg}</strong></div>
+                            <button class="btn-resolve" onclick="resolveAlert(${shop.id})">${LANG[lang].alert_btn}</button>
+                        </div>
+                    `;
+                }
+            });
+
+            // Update KPI Cards
+            document.getElementById('countShops').innerText = shops.length;
+            document.getElementById('countAlerts').innerText = alertCount;
+
+            // Render Restock All Button & Alerts
+            if(alertCount > 0) {
+                alertArea.style.display = 'block';
+                const restockText = `${LANG[lang].restock_all_btn} ${alertCount} ${LANG[lang].stores}`;
+                alertArea.innerHTML = `
+                    <button class="btn-restock-all" onclick="restockAll()">
+                        ${restockText}
+                    </button>
+                ` + alertHtml;
+            } else {
+                alertArea.style.display = 'none';
+            }
+
+            loadStats();
+        }
+
+        // NEW: Function to Filter List
+        function filterShops() {
+            const searchText = document.getElementById('shopSearch').value.toLowerCase();
+            
+            // Filter based on Name, City, or State
+            const filtered = allShopsData.filter(shop => {
+                const searchString = `${shop.name} ${shop.city} ${shop.state}`.toLowerCase();
+                return searchString.includes(searchText);
+            });
+
+            renderDropdown(filtered);
+        }
+
+        // NEW: Function to Draw Dropdown
+        function renderDropdown(shopsToRender) {
+            const select = document.getElementById('shopSelect');
+            
+            // Save current selection if possible
+            const previousValue = select.value;
+            
+            select.innerHTML = ''; // Clear current options
+
+            if (shopsToRender.length === 0) {
+                const option = document.createElement('option');
+                option.text = "No matches found";
+                select.add(option);
+                return;
+            }
+
+            shopsToRender.forEach(shop => {
+                const option = document.createElement('option');
+                option.value = shop.id;
+                option.text = `#${shop.id} - ${shop.name} [${shop.stock_status}]`;
+                select.add(option);
+            });
+
+            // Restore selection if it still exists in the filtered list
+            if (previousValue) {
+                select.value = previousValue;
+            }
+        }
+
+        async function restockAll() {
+            if(confirm("Confirm: Deploy stock to ALL stores immediately?")) {
+                const btn = document.querySelector('.btn-restock-all');
+                btn.innerHTML = "⏳ Processing..."; 
+                btn.style.opacity = "0.7";
+
+                try {
+                    await fetch('/api/admin/restock-all', { method: 'POST' });
+                    alert("✅ SUCCESS: All trucks deployed.");
+                    window.location.reload(); 
+                } catch(e) { alert("Error connecting to server."); }
+            }
+        }
+
+        async function updateStock(status) {
+            const shopId = document.getElementById('shopSelect').value;
+            // Handle edge case where "No matches found" is selected
+            if(!shopId || shopId === "No matches found") return alert("Please select a valid shop.");
+            await sendUpdate(shopId, status);
+        }
+
+        async function resolveAlert(id) {
+            if(confirm(`Send Restock Truck to Shop #${id}?`)) {
+                await sendUpdate(id, 'High');
+            }
+        }
+
+        async function sendUpdate(id, status) {
+            await fetch('/api/admin/restock', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({shopId: id, status})
+            });
+            init(); 
+        }
+
+        async function loadStats() {
+    const res = await fetch('/api/admin/stats?t=' + Date.now());
+    const data = await res.json();
+    
+    // Calculate total distributed
+    const totalKg = (data.rice||0) + (data.wheat||0) + (data.sugar||0) + (data.kerosene||0) + (data.dal||0) + (data.rajma||0);
+    document.getElementById('countDist').innerText = totalKg.toLocaleString();
+
+    const ctx = document.getElementById('myChart');
+    if(window.myChartInstance) window.myChartInstance.destroy();
+    
+    window.myChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            // UPDATED LABELS
+            labels: ['Rice', 'Wheat', 'Sugar', 'Kerosene', 'Dal', 'Rajma'],
+            datasets: [{
+                label: 'Total Distribution (Units)',
+                // UPDATED DATA MAPPING
+                data: [
+                    data.rice || 0, 
+                    data.wheat || 0, 
+                    data.sugar || 0, 
+                    data.kerosene || 0, 
+                    data.dal || 0, 
+                    data.rajma || 0
+                ],
+                // UPDATED COLORS
+                backgroundColor: [
+                    '#3b82f6', // Rice (Blue)
+                    '#f59e0b', // Wheat (Orange)
+                    '#ec4899', // Sugar (Pink)
+                    '#6366f1', // Kerosene (Indigo)
+                    '#10b981', // Dal (Green)
+                    '#8b5cf6'  // Rajma (Purple)
+                ]
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+}
+        
+        // Auto-Refresh
+        setInterval(init, 3000);
+        
+        // Initial Load
+        const storedLang = localStorage.getItem("lang") || "en";
+        document.getElementById('pageLangSelect').value = storedLang;
+        setLang(storedLang); // This calls init() inside it
+    </script>
+</body>
+</html>

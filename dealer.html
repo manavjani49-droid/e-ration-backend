@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dealer Portal | E-Ration</title>
+    <link rel="icon" type="image/png" href="logo.jpg">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { display: flex; height: 100vh; background: #f3f4f6; }
+
+        /* Sidebar */
+        aside { width: 280px; background: #1e293b; color: white; padding: 2rem; display: flex; flex-direction: column; }
+        .brand { display:flex; align-items:center; gap:0.75rem; margin-bottom: 3rem; }
+        .brand-logo { width: 34px; height: 34px; border-radius: 6px; object-fit: cover; box-shadow: 0 6px 12px rgba(0,0,0,0.25); }
+        .brand-text { color: #60a5fa; font-weight: 800; font-size: 1.25rem; }
+        .nav-btn {
+            background: transparent; border: none; color: #94a3b8; text-align: left;
+            padding: 1rem; font-size: 1rem; cursor: pointer; border-radius: 0.5rem;
+            margin-bottom: 0.5rem; transition: 0.3s; display: flex; align-items: center; gap: 10px;
+        }
+        .nav-btn:hover, .nav-btn.active { background: #334155; color: white; }
+        .logout { margin-top: auto; color: #ef4444; }
+        .logout:hover { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+        /* Main Content */
+        main { flex: 1; padding: 2.5rem; overflow-y: auto; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; }
+        h1 { color: #1e293b; font-weight: 700; }
+        
+        /* Stats Grid */
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+            gap: 20px; 
+            margin-bottom: 30px; 
+        }
+        .card { 
+            background: white; 
+            padding: 1.5rem; 
+            border-radius: 1rem; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center;
+        }
+        .card h3 { font-size: 0.85rem; text-transform: uppercase; color: #64748b; margin-bottom: 5px; }
+        .card h1 { font-size: 2rem; color: #0f172a; font-weight: 700; }
+
+        /* Panels */
+        .panel { background: white; padding: 2.5rem; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); max-width: 800px; display: none; }
+        .panel.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Inputs */
+        input, select {
+            width: 100%; padding: 1rem; border: 2px solid #e2e8f0; border-radius: 0.75rem;
+            margin-bottom: 1.5rem; font-size: 1rem; outline: none; transition: 0.3s;
+        }
+        input:focus { border-color: #2563eb; }
+        
+        /* Language Selector */
+        select.lang-select {
+            width: auto; min-width: 120px; padding: 8px 20px; border-radius: 50px;
+            border: none; background: #2563eb; color: white; font-weight: 600; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3); margin-bottom: 0; text-align: center;
+        }
+        select.lang-select:hover { background: #1d4ed8; transform: translateY(-1px); }
+        select.lang-select option { background: white; color: #333; }
+
+        /* Buttons */
+        .btn-main {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8); width: 100%;
+            color: white; padding: 1rem; border: none; border-radius: 0.75rem;
+            font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: 0.3s;
+        }
+        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3); }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th { text-align: left; padding: 1rem; background: #f8fafc; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 1rem; border-bottom: 1px solid #e2e8f0; color: #334155; }
+        tr:hover { background: #f8fafc; }
+
+        .btn-invoice {
+            background: #e0f2fe; color: #0284c7; border: none; padding: 5px 12px;
+            border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 0.85rem;
+            transition: 0.2s; display: flex; align-items: center; gap: 5px; width: fit-content;
+        }
+        
+        #statusMessage { margin-top: 1.5rem; padding: 1rem; border-radius: 0.5rem; display: none; text-align: center; font-weight: 600; }
+        .success { background: #dcfce7; color: #166534; }
+        .error { background: #fee2e2; color: #991b1b; }
+
+        /* --- 💸 PAYMENT MODAL STYLES --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 1000; display: none;
+            justify-content: center; align-items: center;
+        }
+        .modal-card {
+            background: white; width: 90%; max-width: 400px;
+            padding: 2rem; border-radius: 1.5rem; text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            animation: zoomIn 0.3s ease;
+        }
+        @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .amount-display { font-size: 2.5rem; color: #10b981; font-weight: 700; margin: 10px 0; }
+        .payment-options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+        .pay-btn {
+            padding: 15px; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer;
+            font-weight: 600; transition: 0.2s; background: white;
+        }
+        .pay-btn:hover, .pay-btn.selected { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
+        .qr-area { margin: 15px 0; display: none; }
+        .qr-img { width: 180px; height: 180px; border: 1px solid #ddd; padding: 5px; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <aside>
+        <div class="brand">
+            <img src="img4.png" class="brand-logo" alt="Logo">
+            <span class="brand-text">E-Ration</span>
+        </div>
+        <button class="nav-btn active" onclick="switchTab('distribute', this)" data-key="nav_dist">🛒 Distribute Ration</button>
+        <button class="nav-btn" onclick="switchTab('stock', this)" data-key="nav_stock">📦 Stock Management</button>
+        <button class="nav-btn" onclick="switchTab('history', this)" data-key="nav_hist">📜 Sales History</button>
+        <button class="nav-btn logout" onclick="location.href='index.html'" data-key="nav_logout">🚪 Logout</button>
+    </aside>
+
+    <main>
+        <header>
+            <h1><span data-key="dash_title">Shop Dashboard</span> <span style="font-weight: 400; color: #64748b; font-size: 1.2rem;" id="shopHeaderName">...</span></h1>
+            
+            <select id="pageLangSelect" class="lang-select" onchange="setLang(this.value)">
+                <option value="en">English</option>
+                <option value="hi">हिंदी</option>
+                <option value="mr">मराठी</option>
+                <option value="ta">தமிழ்</option>
+                <option value="gu">ગુજરાતી</option>
+            </select>
+        </header>
+
+        <div class="stats-grid">
+            <div class="card" style="border-left: 5px solid #3b82f6;"><h3>Rice Stock</h3><h1 id="stockRice">Loading...</h1></div>
+            <div class="card" style="border-left: 5px solid #f59e0b;"><h3>Wheat Stock</h3><h1 id="stockWheat">Loading...</h1></div>
+            <div class="card" style="border-left: 5px solid #ec4899;"><h3>Sugar Stock</h3><h1 id="stockSugar">Loading...</h1></div>
+            <div class="card" style="border-left: 5px solid #6366f1;"><h3>Kerosene Stock</h3><h1 id="stockKerosene">Loading...</h1></div>
+            <div class="card" style="border-left: 5px solid #10b981;"><h3>Dal Stock</h3><h1 id="stockDal">Loading...</h1></div>
+            <div class="card" style="border-left: 5px solid #8b5cf6;"><h3>Rajma Stock</h3><h1 id="stockRajma">Loading...</h1></div>
+            <div class="card" style="background: #1e293b; border: none;"><h3 style="color: #94a3b8;">Total Sales</h3><h1 id="totalSales" style="color: white;">0</h1></div>
+        </div>
+
+        <div id="distribute" class="panel active">
+            <h2 style="margin-bottom: 1.5rem;" data-key="dist_title">New Transaction</h2>
+            <label style="font-weight: 600; display: block; margin-bottom: 5px;" data-key="lbl_card">Ration Card ID</label>
+            <input type="text" id="cardId" placeholder="e.g. RC-101">
+            <label style="font-weight: 600; display: block; margin-bottom: 5px;" data-key="lbl_comm">Commodity</label>
+            <select id="commodity" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+                <option value="rice">Rice (₹3/kg)</option>
+                <option value="wheat">Wheat (₹2/kg)</option>
+                <option value="sugar">Sugar (₹20/kg)</option>
+                <option value="kerosene">Kerosene (₹25/L)</option>
+                <option value="dal">Dal (₹60/kg)</option>
+                <option value="rajma">Rajma (₹80/kg)</option>
+            </select>
+            <label style="font-weight: 600; display: block; margin-bottom: 5px;" data-key="lbl_qty">Quantity (KG)</label>
+            <input type="number" id="quantity" placeholder="Amount in KG">
+            
+            <button class="btn-main" onclick="openPaymentModal()" data-key="btn_dist">Proceed to Payment ➝</button>
+            
+            <div id="statusMessage"></div>
+        </div>
+
+        <div id="stock" class="panel">
+            <h2 style="margin-bottom: 1rem;" data-key="stk_title">Inventory Status</h2>
+            <p style="margin-bottom: 2rem; color: #64748b;" data-key="stk_desc">Current stock levels are monitored by the central admin. If you are running low, you can raise an alert.</p>
+            <button class="btn-main" style="background: #f59e0b;" onclick="requestStock()" data-key="btn_alert">⚠️ Raise Low Stock Alert</button>
+        </div>
+
+        <div id="history" class="panel">
+            <h2 style="margin-bottom: 1rem;" data-key="hist_title">Transaction Log</h2>
+            <button onclick="loadHistory()" style="margin-bottom: 1rem; padding: 0.5rem 1rem; cursor: pointer;" data-key="btn_refresh">Refresh</button>
+            <table>
+                <thead>
+                    <tr><th data-key="th_id">ID</th><th data-key="th_card">Card No</th><th data-key="th_item">Item</th><th data-key="th_qty">Qty</th><th data-key="th_time">Time</th><th data-key="th_inv">Invoice</th></tr>
+                </thead>
+                <tbody id="historyTableBody"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <div id="paymentModal" class="modal-overlay">
+        <div class="modal-card">
+            <h2>Confirm Payment</h2>
+            <p style="color:#64748b; margin-top:5px;">Collect amount from citizen</p>
+            
+            <div class="amount-display" id="payAmount">₹0</div>
+            
+            <div class="payment-options">
+                <div class="pay-btn selected" id="btnCash" onclick="selectPayment('cash')">
+                    💰 Cash Payment
+                </div>
+                <div class="pay-btn" id="btnQr" onclick="selectPayment('qr')">
+                    📱 QR / UPI
+                </div>
+            </div>
+
+            <div id="qrArea" class="qr-area">
+                <img id="qrImage" class="qr-img" src="" alt="QR Code">
+                <p style="font-size: 0.8rem; color: #64748b; margin-top: 5px;">Scan to pay via GPay / PhonePe</p>
+            </div>
+
+            <button class="btn-main" style="background: #10b981;" onclick="finalizeTransaction()">✅ Confirm & Distribute</button>
+            <button onclick="closeModal()" style="background:none; border:none; color:#ef4444; margin-top:15px; cursor:pointer; font-weight:600;">Cancel Transaction</button>
+        </div>
+    </div>
+
+    <script>
+        let currentHistoryData = []; 
+        let pendingTransaction = null; // Store data temporarily
+
+        // Pricing Config
+        const PRICES = {
+            rice: 3, wheat: 2, sugar: 20, kerosene: 25, dal: 60, rajma: 80
+        };
+
+        const LANG = {
+            en: {
+                nav_dist: "🛒 Distribute Ration", nav_stock: "📦 Stock Management", nav_hist: "📜 Sales History", nav_logout: "🚪 Logout",
+                dash_title: "Shop Dashboard",
+                btn_dist: "Proceed to Payment ➝",
+                stk_title: "Inventory Status", btn_alert: "⚠️ Raise Low Stock Alert",
+                hist_title: "Transaction Log", btn_refresh: "Refresh",
+                th_id: "ID", th_card: "Card No", th_item: "Item", th_qty: "Qty", th_time: "Time", th_inv: "Invoice",
+                btn_down: "📄 Download"
+            }
+            // (Add other languages as needed)
+        };
+
+        function setLang(lang) {
+            localStorage.setItem("lang", lang);
+            document.getElementById('pageLangSelect').value = lang;
+            document.querySelectorAll("[data-key]").forEach(el => {
+                const k = el.dataset.key;
+                if(LANG[lang] && LANG[lang][k]) {
+                    if(el.tagName === 'INPUT') el.placeholder = LANG[lang][k];
+                    else el.innerText = LANG[lang][k];
+                }
+            });
+            if(currentHistoryData.length > 0) renderHistoryTable(currentHistoryData);
+        }
+
+        function switchTab(id, btn) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(btn) btn.classList.add('active');
+            if(id === 'history') loadHistory();
+        }
+
+        window.onload = function() {
+            const shopName = localStorage.getItem('shopName');
+            const shopId = localStorage.getItem('shopId');
+            if(shopId) document.getElementById('shopHeaderName').innerText = `(#${shopId} - ${shopName})`;
+            else window.location.href = 'login.html';
+            
+            fetchStock();
+            loadHistory();
+            setLang(localStorage.getItem("lang") || "en");
+        };
+
+        async function fetchStock() {
+            try {
+                const res = await fetch('/api/inventory');
+                const stock = await res.json();
+                if(stock) {
+                    ['rice','wheat','sugar','kerosene','dal','rajma'].forEach(item => {
+                        const unit = item === 'kerosene' ? 'L' : 'kg';
+                        const el = document.getElementById("stock"+item.charAt(0).toUpperCase()+item.slice(1));
+                        if(el) el.innerText = (stock[item] || 0) + " " + unit;
+                    });
+                }
+            } catch(e){ console.error(e); }
+        }
+
+        // --- 💸 NEW PAYMENT LOGIC ---
+
+        function openPaymentModal() {
+            const cardId = document.getElementById("cardId").value;
+            const commodity = document.getElementById("commodity").value;
+            const qty = document.getElementById("quantity").value;
+
+            if(!cardId || !qty) return alert("Please fill all details");
+
+            const price = PRICES[commodity] || 0;
+            const total = price * qty;
+
+            // Store for later
+            pendingTransaction = { cardId, commodity, qty, total };
+
+            // Show Modal
+            document.getElementById("payAmount").innerText = "₹" + total;
+            document.getElementById("paymentModal").style.display = "flex";
+            selectPayment('cash'); // Reset to cash default
+        }
+
+        function selectPayment(mode) {
+            const btnCash = document.getElementById('btnCash');
+            const btnQr = document.getElementById('btnQr');
+            const qrArea = document.getElementById('qrArea');
+
+            if(mode === 'cash') {
+                btnCash.classList.add('selected');
+                btnQr.classList.remove('selected');
+                qrArea.style.display = 'none';
+            } else {
+                btnQr.classList.add('selected');
+                btnCash.classList.remove('selected');
+                qrArea.style.display = 'block';
+                
+                // GENERATE QR CODE
+                const upiString = `upi://pay?pa=ration@upi&pn=E-RationShop&am=${pendingTransaction.total}&cu=INR`;
+                document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiString)}`;
+            }
+        }
+
+        function closeModal() {
+            document.getElementById("paymentModal").style.display = "none";
+        }
+
+        async function finalizeTransaction() {
+            if(!pendingTransaction) return;
+            
+            const btn = document.querySelector("#paymentModal .btn-main");
+            btn.innerHTML = "Processing...";
+            btn.style.opacity = "0.7";
+
+            try {
+                const res = await fetch('/api/distribute', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({
+                        cardId: pendingTransaction.cardId, 
+                        commodity: pendingTransaction.commodity, 
+                        qty: pendingTransaction.qty
+                    })
+                });
+                const result = await res.json();
+                
+                closeModal();
+                btn.innerHTML = "✅ Confirm & Distribute";
+                btn.style.opacity = "1";
+
+                const msg = document.getElementById("statusMessage");
+                msg.style.display = 'block';
+
+                if(res.ok) {
+                    msg.className = 'success';
+                    msg.innerHTML = `Transaction Successful! <br><button onclick="printBill('${result.user}', '${pendingTransaction.cardId}', '${pendingTransaction.commodity}', '${pendingTransaction.qty}')" style="margin-top:10px; padding:5px 15px; cursor:pointer;">🖨️ Print Receipt</button>`;
+                    fetchStock();
+                    let currentSales = parseInt(document.getElementById("totalSales").innerText);
+                    document.getElementById("totalSales").innerText = currentSales + 1;
+                } else {
+                    msg.className = 'error'; 
+                    msg.innerText = result.error;
+                }
+            } catch(e){ 
+                alert("Connection Error");
+                closeModal();
+            }
+        }
+
+        async function loadHistory() {
+            const res = await fetch('/api/dealer/history');
+            currentHistoryData = await res.json(); 
+            document.getElementById("totalSales").innerText = currentHistoryData.length;
+            renderHistoryTable(currentHistoryData);
+        }
+
+        function renderHistoryTable(data) {
+            let html = '';
+            data.forEach(r => {
+                const dateStr = new Date(r.date).toLocaleDateString();
+                const timeStr = new Date(r.date).toLocaleTimeString();
+                html += `<tr><td>#${r.id}</td><td>${r.card_id}</td><td>${r.item.toUpperCase()}</td><td>${r.qty} kg</td><td>${timeStr}</td><td><button class="btn-invoice" onclick="printBill('Beneficiary', '${r.card_id}', '${r.item}', '${r.qty}', '${r.id}', '${dateStr} ${timeStr}')">📄 Download</button></td></tr>`; 
+            });
+            document.getElementById('historyTableBody').innerHTML = html;
+        }
+
+        function printBill(name, card, item, qty, txId = 'NEW', date = new Date().toLocaleString()) {
+            const price = PRICES[item.toLowerCase()] || 0;
+            const total = (qty * price).toFixed(2);
+            const w = window.open('', '', 'height=650,width=450');
+            w.document.write(`<html><head><title>Receipt</title><style>body{font-family:'Courier New';padding:20px;text-align:center;border:2px dashed #333;margin:20px;}.row{display:flex;justify-content:space-between;margin:5px 0;}.divider{border-bottom:1px dashed #000;margin:15px 0;}</style></head><body><h2>GOVT OF INDIA</h2><div class="divider"></div><div class="row"><span>Item</span><span>${item.toUpperCase()}</span></div><div class="row"><span>Qty</span><span>${qty} x ₹${price}</span></div><div class="divider"></div><div class="row"><span><b>TOTAL</b></span><span><b>₹${total}</b></span></div></body></html>`);
+            w.document.close();
+            w.print();
+        }
+        
+        async function requestStock() {
+            const shopId = localStorage.getItem('shopId');
+            if(!shopId) return alert("Error: No Shop ID found.");
+            try {
+                await fetch('/api/dealer/alert', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ shopId }) 
+                });
+                alert("✅ SUCCESS: Alert sent!");
+            } catch(e) { alert("Failed to send alert."); }
+        }
+    </script>
+</body>
+</html>
