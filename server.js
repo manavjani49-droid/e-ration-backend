@@ -5,9 +5,9 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 // --- 🔐 TWILIO CONFIGURATION ---
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const verifySid = "VAdefde5c7e3abace053a3db6346e7162e";
+const accountSid = "AC59d3f8693a67b8272ebbe95408ca4b8f";
+const authToken = "8544c3474e9162eafea756d11e0ae587";
+const verifySid = "VA57377a632d7a531dab4fba37f756c4e0";
 const client = require('twilio')(accountSid, authToken);
 
 // 📱 TARGET PHONE NUMBER
@@ -105,13 +105,13 @@ db.serialize(() => {
             const userStmt = db.prepare("INSERT INTO users (username, role, name, card_category, quota_rice, quota_wheat, quota_sugar, quota_kerosene, quota_dal, quota_rajma, shop_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             
             // 🟡 Yellow Card (AAY - Poorest)
-            userStmt.run('RC-101', 'user', 'Manav Jani', 'Yellow', 35, 35, 10, 10, 10, 10, null);
+            userStmt.run('RC-101', 'user', 'Meet Johari', 'Yellow', 35, 35, 10, 10, 10, 10, null);
             
             // 🟠 Orange Card (BPL - Below Poverty Line)
-            userStmt.run('RC-102', 'user', 'Ayush Kutre', 'Orange', 20, 20, 5, 5, 5, 5, null);
+            userStmt.run('RC-102', 'user', 'Sita Devi', 'Orange', 20, 20, 5, 5, 5, 5, null);
             
             // ⚪ White Card (APL - Above Poverty Line - New User)
-            userStmt.run('RC-103', 'user', 'Meet johari', 'White', 5, 5, 2, 0, 0, 0, null);
+            userStmt.run('RC-103', 'user', 'Rahul APL', 'White', 5, 5, 2, 0, 0, 0, null);
             
             userStmt.run('admin', 'admin', 'Govt Officer', 'Admin', 0,0,0,0,0,0, null);
             
