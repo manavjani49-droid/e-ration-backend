@@ -5,10 +5,11 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 // --- 🔐 TWILIO CONFIGURATION ---
-const accountSid = "AC7c31233e2e1401e63bd818ad9ccf5ef1";
-const authToken = "52bc8f0dac296c43d3f149bd6510f10a";
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
 const verifySid = "VAdefde5c7e3abace053a3db6346e7162e";
 const client = require('twilio')(accountSid, authToken);
+
 
 // 📱 TARGET PHONE NUMBER
 const MY_NUMBER = "+919930784468"; 
