@@ -5,10 +5,10 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 // --- 🔐 TWILIO CONFIGURATION ---
-const accountSid = "AC59d3f8693a67b8272ebbe95408ca4b8f";
-const authToken = "8544c3474e9162eafea756d11e0ae587";
-const verifySid = "VA57377a632d7a531dab4fba37f756c4e0";
-const client = require('twilio')(accountSid, authToken);
+// const accountSid = process.env.TWILIO_ACCOUNT_SID;
+// const authToken = process.env.TWILIO_AUTH_TOKEN;
+// const verifySid = "VAdefde5c7e3abace053a3db6346e7162e";
+// const client = require('twilio')(accountSid, authToken);
 
 // 📱 TARGET PHONE NUMBER
 const MY_NUMBER = "+919930784468"; 
@@ -138,32 +138,49 @@ db.serialize(() => {
 });
 
 // --- OTP & LOGIN LOGIC ---
-app.post('/api/auth/send-otp', (req, res) => {
+app.post('/api/auth/send-otp', async (req, res) => {
     const { username, role } = req.body;
-    db.get("SELECT * FROM users WHERE username = ? AND role = ?", [username, role], (err, row) => {
-        if (!row) return res.status(404).json({ error: "User not found." });
-        
-        client.verify.v2.services(verifySid)
-            .verifications.create({ to: MY_NUMBER, channel: 'sms' })
-            .then(verification => res.json({ success: true, message: "OTP Sent via Twilio!" }))
-            .catch(error => res.json({ success: false, message: "Twilio Error." }));
+
+    console.log(`Dummy OTP requested for ${role}: ${username}`);
+
+    // Instantly bypass Twilio and tell the frontend to use 123456
+    return res.json({ 
+        success: true, 
+        message: "✨ Twilio bypassed. Use Dummy OTP: 123456" 
     });
 });
-
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
     const { username, role, otp } = req.body;
-    client.verify.v2.services(verifySid)
-      .verificationChecks.create({ to: MY_NUMBER, code: otp })
-      .then(check => {
-          if (check.status === 'approved') {
-              db.get("SELECT * FROM users WHERE username = ?", [username], (err, user) => {
-                  res.json({ success: true, redirect: role + '.html', shopId: user.shop_id, shopName: user.name });
-              });
-          } else {
-              res.status(401).json({ error: "Invalid OTP" });
-          }
-      })
-      .catch(e => res.status(500).json({ error: "Verification Failed" }));
+
+    // Check if they entered the master code
+    if (otp === "123456") {
+        console.log(`Master login successful for ${role}: ${username}`);
+
+        // 1. Citizen -> user.html
+        if (role === 'user') {
+            return res.json({ success: true, redirect: '/user.html' });
+        } 
+        
+        // 2. Dealer -> dealer.html
+        else if (role === 'dealer') {
+            return res.json({ 
+                success: true, 
+                redirect: '/dealer.html',
+                shopId: username, 
+                shopName: 'Goregaon Ration Center' 
+            });
+        } 
+        
+        // 3. Admin -> admin.html
+        else if (role === 'admin') {
+            return res.json({ success: true, redirect: '/admin.html' });
+        }
+    } 
+    
+    // Reject any other OTP
+    else {
+        return res.json({ success: false, error: "Invalid OTP Code. Use 123456." });
+    }
 });
 
 // --- APIS ---
